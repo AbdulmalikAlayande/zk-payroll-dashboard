@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { StellarProvider } from '@/components/providers/StellarProvider';
 import { StellarDebugPanel } from '@/components/debug/StellarDebugPanel';
+import { MonitoringProvider } from '@/components/providers/MonitoringProvider';
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <StellarProvider>
+          <MonitoringProvider />
           {children}
           {process.env.NODE_ENV === 'development' && <StellarDebugPanel />}
         </StellarProvider>

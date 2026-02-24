@@ -7,7 +7,7 @@ function buildCsp(): string {
   const directives: Record<string, string[]> = {
     'default-src': ["'self'"],
     'script-src': isDev
-      ? ["'self'", "'unsafe-eval'"]
+      ? ["'self'", "'unsafe-eval'", "'unsafe-inline'"]
       : ["'self'"],
     'style-src': ["'self'", "'unsafe-inline'"],
     'img-src': ["'self'", 'data:', 'blob:'],

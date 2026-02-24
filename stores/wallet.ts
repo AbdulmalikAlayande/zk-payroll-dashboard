@@ -1,4 +1,7 @@
 import { create } from 'zustand';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('wallet');
 
 interface WalletState {
   isConnected: boolean;
@@ -37,7 +40,7 @@ export const useWalletStore = create<WalletState>((set) => ({
         publicKey,
       });
     } catch (error) {
-      console.error('Wallet connection failed:', error);
+      log.error('Wallet connection failed', { error: error instanceof Error ? error.message : String(error) });
     }
   },
 
