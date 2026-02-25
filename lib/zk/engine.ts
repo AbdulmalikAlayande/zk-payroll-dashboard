@@ -8,6 +8,10 @@ import type {
   ZkProofRequest,
 } from "@/types";
 import type { MockProver } from "./mockProver";
+import { createLogger } from "@/lib/logger";
+import { startPerformanceMark, endPerformanceMark } from "@/lib/monitoring";
+
+const log = createLogger("zk-engine");
 
 const DEFAULT_INIT_CONFIG: Required<ZkEngineInitConfig> = {
   verificationKeyPath: "/zk/verification_key.json",
@@ -18,13 +22,13 @@ async function fetchOptionalJson(path: string): Promise<unknown | null> {
   try {
     const response = await fetch(path, { cache: "force-cache" });
     if (!response.ok) {
-      console.warn(`[zk] verification key missing at ${path}; using mock fallback`);
+      log.warn("Verification key missing; using mock fallback", { path });
       return null;
     }
 
     return await response.json();
   } catch (error) {
-    console.warn("[zk] failed to fetch verification key; using mock fallback", error);
+    log.warn("Failed to fetch verification key; using mock fallback", { path, error: error instanceof Error ? error.message : String(error) });
     return null;
   }
 }
@@ -33,13 +37,13 @@ async function fetchOptionalWasm(path: string): Promise<ArrayBuffer | null> {
   try {
     const response = await fetch(path, { cache: "force-cache" });
     if (!response.ok) {
-      console.warn(`[zk] circuit wasm missing at ${path}; using mock fallback`);
+      log.warn("Circuit WASM missing; using mock fallback", { path });
       return null;
     }
 
     return await response.arrayBuffer();
   } catch (error) {
-    console.warn("[zk] failed to fetch circuit wasm; using mock fallback", error);
+    log.warn("Failed to fetch circuit WASM; using mock fallback", { path, error: error instanceof Error ? error.message : String(error) });
     return null;
   }
 }
@@ -87,8 +91,11 @@ class MockZkEngine implements ZkEngine {
 
   async generateProof(request: ZkProofRequest): Promise<PayrollProof> {
     await this.init();
+    startPerformanceMark("zk-proof-generation");
     const prover = await this.getProver();
-    return prover.generateProof(request, this.artifacts);
+    const proof = await prover.generateProof(request, this.artifacts);
+    endPerformanceMark("zk-proof-generation");
+    return proof;
   }
 
   async verifyProof(

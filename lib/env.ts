@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { createLogger } from "./logger";
+
+const log = createLogger("env");
 
 const urlString = z
   .string()
@@ -23,10 +26,9 @@ const parsed = envSchema.safeParse({
 });
 
 if (!parsed.success) {
-  console.error(
-    "Invalid environment variables:",
-    JSON.stringify(z.treeifyError(parsed.error), null, 2)
-  );
+  log.fatal("Invalid environment variables", {
+    errors: z.treeifyError(parsed.error),
+  });
   throw new Error("Invalid environment variables");
 }
 
