@@ -20,6 +20,8 @@ import * as StellarSdk from '@stellar/stellar-sdk';
 import { Api as RpcApi, assembleTransaction, Server as SorobanServer } from '@stellar/stellar-sdk/rpc';
 import { useWalletStore, NETWORK_PASSPHRASES, StellarNetwork } from '@/stores/walletStore';
 import { WalletErrorOverlay } from './WalletErrorOverlay';
+import { createLogger } from '@/lib/logger';
+import { startPerformanceMark, endPerformanceMark } from '@/lib/monitoring';
 
 // ─── Network Configuration ────────────────────────────────────────────────────
 
@@ -42,6 +44,8 @@ const NETWORK_CONFIG: Record<
 };
 
 const EXPECTED_NETWORK: StellarNetwork = 'TESTNET';
+
+const log = createLogger('StellarProvider');
 
 // ─── Context Types ────────────────────────────────────────────────────────────
 
@@ -166,7 +170,7 @@ export const StellarProvider: React.FC<{ children: React.ReactNode }> = ({
                 setConnected(true);
                 await syncNetworkFromFreighter();
             } catch (err) {
-                console.error('[StellarProvider] Init error:', err);
+                log.error('Initialization failed', { error: err instanceof Error ? err.message : String(err) });
                 setConnected(false);
             } finally {
                 setLoading(false);
@@ -230,6 +234,7 @@ export const StellarProvider: React.FC<{ children: React.ReactNode }> = ({
         }
 
         try {
+            startPerformanceMark('wallet-connect');
             setLoading(true);
             setError(null);
 
@@ -248,7 +253,9 @@ export const StellarProvider: React.FC<{ children: React.ReactNode }> = ({
             setPublicKey(addressObj.address);
             setConnected(true);
             await syncNetworkFromFreighter();
+            endPerformanceMark('wallet-connect');
         } catch (err: unknown) {
+            endPerformanceMark('wallet-connect');
             const message = err instanceof Error ? err.message : 'Connection failed.';
             setError(message);
             showOverlay('generic', { message });
